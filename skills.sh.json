@@ -1,0 +1,14 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "LaTeX",
+      "description": "Compile and render LaTeX with a real TeX Live toolchain, without installing TeX.",
+      "skills": [
+        "latex-to-pdf",
+        "latex-to-image"
+      ]
+    }
+  ]
+}

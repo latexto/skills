@@ -1,0 +1,46 @@
+{
+  "name": "latexto",
+  "version": "0.1.0",
+  "description": "Compile LaTeX to PDF and render LaTeX to PNG from the command line, with no local TeX installation. Drives latex.to in headless Chromium.",
+  "keywords": [
+    "latex",
+    "tex",
+    "pdf",
+    "png",
+    "katex",
+    "texlive",
+    "compile",
+    "cli",
+    "agent"
+  ],
+  "license": "MIT",
+  "author": "latex.to (https://latex.to)",
+  "homepage": "https://latex.to/agents.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/latexto/skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/latexto/skills/issues"
+  },
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "latexto": "./bin/latexto.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.3.0"
+  },
+  "dependencies": {
+    "playwright-core": "1.61.0"
+  }
+}
