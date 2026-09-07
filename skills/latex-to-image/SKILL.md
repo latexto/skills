@@ -1,6 +1,6 @@
 ---
 name: latex-to-image
-description: Renders LaTeX math, TikZ diagrams, LaTeX documents and LaTeX projects to PNG images with no TeX installation. Use when the user wants an equation, formula, matrix, chemical or mathematical expression, table, TikZ diagram, figure or plot, or one page of a .tex document or project turned into a picture, for a slide, a README, a chat message, an issue or a web page. A math snippet renders in milliseconds through KaTeX; TikZ, plots, documents and exact TeX output go through a real TeX Live compile and are cropped automatically. Pass a single file when it is self-contained, otherwise pass the directory holding the main file, and pick the page with --page. Not for turning a whole document into a PDF, use latex-to-pdf for that.
+description: Renders LaTeX math, TikZ diagrams, LaTeX documents and LaTeX projects to PNG images with no TeX installation. Use when the user wants an equation, formula, matrix, chemical or mathematical expression, table, TikZ or PSTricks diagram, figure or plot, or one page of a .tex document or project turned into a picture, for a slide, a README, a chat message, an issue or a web page. A math snippet renders in milliseconds through KaTeX; TikZ, PSTricks, plots, documents and exact TeX output go through a real TeX Live compile and are cropped automatically. Pass a single file when it is self-contained, otherwise pass the directory holding the main file, and pick the page with --page. Not for turning a whole document into a PDF, use latex-to-pdf for that.
 license: MIT
 compatibility: Requires a shell, Node 18.3 or newer, a Chromium based browser (npx playwright install chromium), and network access to latex.to, cdn.latex.to and cxrtnc.leaningtech.com (the snippet route needs latex.to only). Not usable in a browser-less or egress-restricted sandbox.
 ---
@@ -97,7 +97,7 @@ npx latexto image eq.tex --scale 4 -o eq@4x.png
 
 KaTeX covers a large math subset but not all of LaTeX. A parse error exits with
 code 1 and names the offending control sequence. If the snippet needs a package
-KaTeX does not have (`tikz`, `chemfig`, `siunitx`, custom macros), switch to the
+KaTeX does not have (`tikz`, `pstricks`, `chemfig`, `siunitx`, custom macros), switch to the
 document route.
 
 ## Render with exact TeX output
@@ -166,8 +166,10 @@ npx latexto image ./arxiv --main paper.tex --page 1 -o fig.png
 ```
 
 `--engine` and `--bib` are accepted here exactly as in `latex-to-pdf`
-(`auto, pdflatex, xelatex, lualatex, latex-dvi, pdftex, xetex, luatex, context, platex, uplatex`
-and `auto, none, bibtex, biblatex-bibtex, biblatex-biber`). `--page`, `--scale`
+(`auto, pdflatex, xelatex, lualatex, latex, latex-dvipdfmx, pdftex, xetex, luatex, context, platex, uplatex, context-mkiv`
+and `auto, none, bibtex, biblatex-bibtex, biblatex-biber`; `auto` picks the
+PostScript route `latex` for a PSTricks document by itself, and the ids are
+read from the site at run time). `--page`, `--scale`
 and `--crop` work as they do on the document route. Without `-o` the PNG is
 `<main>.png` in the current working directory.
 

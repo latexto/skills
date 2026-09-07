@@ -1,6 +1,6 @@
 ---
 name: latex-to-pdf
-description: Compiles LaTeX to PDF with a real TeX Live toolchain and no TeX installation. Use when the user wants a .tex file, paper, thesis, report, CV or resume, cover letter, beamer slides, an Overleaf project or an arXiv submission turned into a PDF, when pdflatex, xelatex, lualatex, latexmk, bibtex or biber is missing or fails to install, or when a document must be built inside a sandbox or container that only has Chromium. Pass a single file only when it is self-contained, otherwise pass the directory holding the main file (figures, .bib, .cls and \input files come along). Prints the LaTeX log so errors can be fixed and the compile retried. Not for a single formula or a page as an image, use latex-to-image for that.
+description: Compiles LaTeX to PDF with a real TeX Live toolchain and no TeX installation. Use when the user wants a .tex file, paper, thesis, report, CV or resume, cover letter, beamer slides, a PSTricks or ConTeXt document, an Overleaf project or an arXiv submission turned into a PDF, when pdflatex, xelatex, lualatex, latexmk, bibtex or biber is missing or fails to install, or when a document must be built inside a sandbox or container that only has Chromium. Pass a single file only when it is self-contained, otherwise pass the directory holding the main file (figures, .bib, .cls and \input files come along). Prints the LaTeX log so errors can be fixed and the compile retried. Not for a single formula or a page as an image, use latex-to-image for that.
 license: MIT
 compatibility: Requires a shell, Node 18.3 or newer, a Chromium based browser (npx playwright install chromium), and network access to latex.to, cdn.latex.to and cxrtnc.leaningtech.com. Not usable in a browser-less or egress-restricted sandbox.
 ---
@@ -172,13 +172,20 @@ exit code 3.
 
 `--engine` and `--bib` take a lowercase id, matched exactly, with no quoting
 needed. Engines:
-`auto, pdflatex, xelatex, lualatex, latex-dvi, pdftex, xetex, luatex, context, platex, uplatex`,
-where `auto` detects the engine from the source and `latex-dvi` is LaTeX
-producing DVI, converted to PDF with dvipdfmx. Bibliographies:
+`auto, pdflatex, xelatex, lualatex, latex, latex-dvipdfmx, pdftex, xetex, luatex, context, platex, uplatex, context-mkiv`,
+where `auto` detects the engine from the source (a `% !TeX program = xelatex`
+comment wins, then the packages). `latex` is LaTeX through dvips and
+Ghostscript, the PostScript route that renders PSTricks, psfrag and EPS
+figures, and `auto` picks it for a document loading `pstricks`.
+`latex-dvipdfmx` is LaTeX producing DVI, converted to PDF with dvipdfmx, and
+is never auto-picked. `context` is the current ConTeXt (LMTX); `context-mkiv`
+is the older MkIV branch and has to be named, since both share the
+`\starttext` fingerprint. Bibliographies:
 `auto, none, bibtex, biblatex-bibtex, biblatex-biber`, where `none` runs no
 bibliography processor, `bibtex` is plain BibTeX, and the two `biblatex-` ids
-pick the backend the `biblatex` package is loaded with. A wrong value exits 2
-and lists what is accepted.
+pick the backend the `biblatex` package is loaded with. The ids are read from
+the site at run time, so a wrong value exits 2 and lists what is accepted
+today.
 
 `--timeout <seconds>` (default 1200), `--profile <dir>`, `--headed` and
 `--sandbox` are the shared options; `npx latexto help` prints them.
@@ -209,6 +216,11 @@ below the default of 1200 seconds for a first run.
 
 Progress messages ("Booting", "Compiling", package downloads) stream to stderr
 while this happens. They are progress, not errors.
+
+A ConTeXt document that names a typeface outside the prepared set (Latin
+Modern) prepares its fonts before its first compile, with `Preparing fonts
+(round n)` on stderr. That can add several minutes once; the prepared fonts
+stay in the profile, so a later compile of the same document skips it.
 
 ## When a compile fails
 

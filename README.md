@@ -134,16 +134,21 @@ tends to hold several `.tex` files in the root and no `main.tex`.
 ## Engines and bibliographies
 
 `--engine` takes an id:
-`auto, pdflatex, xelatex, lualatex, latex-dvi, pdftex, xetex, luatex, context, platex, uplatex`.
+`auto, pdflatex, xelatex, lualatex, latex, latex-dvipdfmx, pdftex, xetex, luatex, context, platex, uplatex, context-mkiv`.
 `--bib` takes `auto, none, bibtex, biblatex-bibtex, biblatex-biber`. `auto`
-detects from the source, `latex-dvi` is the DVI route through dvipdfmx, and no
-value needs quoting. A wrong value exits 2 and prints the accepted list.
+detects from the source. `latex` is LaTeX through dvips and Ghostscript, the
+PostScript route that renders PSTricks, psfrag and EPS figures, and what `auto`
+picks for a document loading `pstricks`; `latex-dvipdfmx` is LaTeX producing
+DVI, converted with dvipdfmx, and is never auto-picked; `context` is the
+current ConTeXt (LMTX) and `context-mkiv` the older MkIV branch, which has to
+be named. No value needs quoting. The ids are read from the site at run time,
+so a wrong value exits 2 and prints the list the site accepts today.
 
 ## Images
 
 `latexto image` takes a file or a directory, on the same rule as `pdf`. A
 math snippet is rendered by KaTeX with no TeX Live boot. A full document, a TikZ
-picture, a plot or anything given `--tex` is compiled instead and one page is
+or PSTricks picture, a plot or anything given `--tex` is compiled instead and one page is
 rasterised and cropped, which needs that single file to be self-contained. A
 directory is a project: it is staged whole, with the same rules, the same
 `--main`, `--engine` and `--bib` as `pdf`, and one page of the resulting PDF
@@ -263,7 +268,7 @@ The published npm tarball is `bin/`, `src/`, `README.md`, `LICENSE` and
 ## Links
 
 - <https://latex.to>, the editor and compiler in your browser
-- <https://latex.to/agents.html>, the agent facing page
+- <https://latex.to/agents/>, the agent facing page
 - <https://github.com/latexto/skills>, source and issues
 - [Agent Skills](https://agentskills.io), the standard the skills follow
 

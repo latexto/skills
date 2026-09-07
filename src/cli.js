@@ -96,9 +96,13 @@ Options:
   --main <name>        Main .tex file of a directory project (default main.tex,
                        else the only .tex file in the directory root, else the
                        only .tex file anywhere in the tree)
-  --engine <id>        TeX engine: auto, pdflatex, xelatex, lualatex, latex-dvi,
-                       pdftex, xetex, luatex, context, platex, uplatex
-                       (auto detects from the source, latex-dvi is the DVI route)
+  --engine <id>        TeX engine: auto, pdflatex, xelatex, lualatex, latex,
+                       latex-dvipdfmx, pdftex, xetex, luatex, context, platex,
+                       uplatex, context-mkiv. auto detects from the source;
+                       latex is LaTeX through dvips and Ghostscript (PSTricks,
+                       psfrag, EPS), latex-dvipdfmx the plain DVI route and
+                       context-mkiv the older ConTeXt branch, the last two
+                       only when named. The site's live list wins
   --bib <id>           Bibliography processor: auto, none, bibtex,
                        biblatex-bibtex, biblatex-biber
   --profile, --timeout, --headed, --sandbox, --help  See "latexto help"
@@ -129,9 +133,13 @@ Options:
   --main <name>        Main .tex file of a directory project (default main.tex,
                        else the only .tex file in the directory root, else the
                        only .tex file anywhere in the tree)
-  --engine <id>        TeX engine: auto, pdflatex, xelatex, lualatex, latex-dvi,
-                       pdftex, xetex, luatex, context, platex, uplatex
-                       (auto detects from the source, latex-dvi is the DVI route)
+  --engine <id>        TeX engine: auto, pdflatex, xelatex, lualatex, latex,
+                       latex-dvipdfmx, pdftex, xetex, luatex, context, platex,
+                       uplatex, context-mkiv. auto detects from the source;
+                       latex is LaTeX through dvips and Ghostscript (PSTricks,
+                       psfrag, EPS), latex-dvipdfmx the plain DVI route and
+                       context-mkiv the older ConTeXt branch, the last two
+                       only when named. The site's live list wins
   --bib <id>           Bibliography processor: auto, none, bibtex,
                        biblatex-bibtex, biblatex-biber
   --tex                Force the document route: a bare snippet is wrapped in a

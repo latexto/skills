@@ -1,6 +1,6 @@
 {
   "name": "latexto",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Compile LaTeX to PDF and render LaTeX to PNG from the command line, with no local TeX installation. Drives latex.to in headless Chromium.",
   "keywords": [
     "latex",
@@ -15,7 +15,7 @@
   ],
   "license": "MIT",
   "author": "latex.to (https://latex.to)",
-  "homepage": "https://latex.to/agents.html",
+  "homepage": "https://latex.to/agents/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/latexto/skills.git"

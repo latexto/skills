@@ -44,7 +44,7 @@ const ARGUMENT_REJECTIONS = [
 ];
 
 const OUTDATED_HINT =
-  'The site may predate this API. Update the CLI ("npm install -g latexto@latest") and see https://latex.to/agents.html.';
+  'The site may predate this API. Update the CLI ("npm install -g latexto@latest") and see https://latex.to/agents/.';
 
 /**
  * Runs before every page script. It installs the bridge the evaluate() calls
@@ -256,6 +256,7 @@ export class LatextoSession {
           width: output.width,
           height: output.height,
           pageCount: output.pageCount,
+          effectiveScale: output.effectiveScale,
         };
       } catch (error) {
         return window.__latextoFailure(error);
@@ -268,6 +269,7 @@ export class LatextoSession {
       width: result.width,
       height: result.height,
       pageCount: result.pageCount,
+      effectiveScale: result.effectiveScale,
     };
   }
 
