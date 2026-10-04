@@ -2,7 +2,7 @@
 name: latex-to-pdf
 description: Compiles LaTeX to PDF with a real TeX Live toolchain and no TeX installation. Use when the user wants a .tex file, paper, thesis, report, CV or resume, cover letter, beamer slides, a PSTricks or ConTeXt document, an Overleaf project or an arXiv submission turned into a PDF, when pdflatex, xelatex, lualatex, latexmk, bibtex or biber is missing or fails to install, or when a document must be built inside a sandbox or container that only has Chromium. Pass a single file only when it is self-contained, otherwise pass the directory holding the main file (figures, .bib, .cls and \input files come along). Prints the LaTeX log so errors can be fixed and the compile retried. Not for a single formula or a page as an image, use latex-to-image for that.
 license: MIT
-compatibility: Requires a shell, Node 18.3 or newer, a Chromium based browser (npx playwright install chromium), and network access to latex.to, cdn.latex.to and cxrtnc.leaningtech.com. Not usable in a browser-less or egress-restricted sandbox.
+compatibility: Requires a shell, Node 18.3 or newer, a Chromium based browser (npx playwright install chromium), and network access to latex.to and cdn.latex.to. Not usable in a browser-less or egress-restricted sandbox.
 ---
 
 # Compile LaTeX to PDF
@@ -18,8 +18,8 @@ a multi gigabyte download.
 ## Where this runs
 
 It needs a shell on a machine or container that can run a Chromium based
-browser and reach `latex.to`, `cdn.latex.to` and `cxrtnc.leaningtech.com`. Local
-coding agents (Claude Code, Codex, Cursor and similar) and CI runners qualify.
+browser and reach `latex.to` and `cdn.latex.to`. Local coding agents (Claude
+Code, Codex, Cursor and similar) and CI runners qualify.
 
 Browser-less or egress-restricted sandboxes do not: Claude.ai code execution,
 Claude Code on the web and Cowork have no browser to drive and no route to those
@@ -146,16 +146,20 @@ file is refused before it is read, never truncated. Over budget means moving the
 large data out of the tree, or compiling a trimmed copy of the project.
 
 Dropped quietly, with no line on stderr: dotfiles and dot-directories (`.git`,
-`.latexmkrc`), `node_modules`, and symlinked directories, which are never
-followed. A symlinked file that stays inside the project is staged normally.
+`.gitignore`), `node_modules`, and symlinked directories, which are never
+followed. The one dotfile that is staged is a `.latexmkrc` in the directory
+root, which `--engine auto` reads. A symlinked file that stays inside the
+project is staged normally.
 
 **When LaTeX cannot find a file, read the skipped line first.**
 
 Only the PDF comes back. Nothing is written into the project: no `.aux`, `.bbl`,
-`.log` or `.out` is left behind, because the auxiliary files live and die inside
-the browser VM. Without `-o` the PDF is `<main>.pdf` in the current working
-directory, not in the project directory, so `npx latexto pdf ./project/src`
-with `thesis.tex` as the main file writes `./thesis.pdf`.
+`.log` or `.out` is left behind, because the auxiliary files stay in the browser
+profile, kept per input path and main file, which is why compiling the same
+project again takes fewer passes. Without `-o` the PDF is `<main>.pdf` in the
+current working directory, not in the project directory, so
+`npx latexto pdf ./project/src` with `thesis.tex` as the main file writes
+`./thesis.pdf`.
 
 ### Options
 
@@ -173,10 +177,11 @@ exit code 3.
 `--engine` and `--bib` take a lowercase id, matched exactly, with no quoting
 needed. Engines:
 `auto, pdflatex, xelatex, lualatex, latex, latex-dvipdfmx, pdftex, xetex, luatex, context, platex, uplatex, context-mkiv`,
-where `auto` detects the engine from the source (a `% !TeX program = xelatex`
-comment wins, then the packages). `latex` is LaTeX through dvips and
-Ghostscript, the PostScript route that renders PSTricks, psfrag and EPS
-figures, and `auto` picks it for a document loading `pstricks`.
+where `auto` detects the engine from the project (a `% !TeX program = xelatex`
+comment in the main file wins, then the `$pdf_mode` of a `.latexmkrc` or
+`latexmkrc` in the directory root, then the packages). `latex` is LaTeX through
+dvips and Ghostscript, the PostScript route that renders PSTricks, psfrag and
+EPS figures, and `auto` picks it for a document loading `pstricks`.
 `latex-dvipdfmx` is LaTeX producing DVI, converted to PDF with dvipdfmx, and
 is never auto-picked. `context` is the current ConTeXt (LMTX); `context-mkiv`
 is the older MkIV branch and has to be named, since both share the
@@ -186,6 +191,12 @@ bibliography processor, `bibtex` is plain BibTeX, and the two `biblatex-` ids
 pick the backend the `biblatex` package is loaded with. The ids are read from
 the site at run time, so a wrong value exits 2 and lists what is accepted
 today.
+
+`--clean` compiles from scratch, without the auxiliary files kept from the last
+compile of that path. Pass it whenever a path now holds a different document
+than the one compiled there before, a scratch directory reused for another
+paper for instance: the kept files are the old document's, and the new one
+would start from them.
 
 `--timeout <seconds>` (default 1200), `--profile <dir>`, `--headed` and
 `--sandbox` are the shared options; `npx latexto help` prints them.
@@ -207,20 +218,18 @@ candidates to choose from.
 
 ## The first run is slow, the rest are fast
 
-The first compile downloads a TeX Live disk image into a browser profile and
-can take several minutes; later compiles read that cache and finish in seconds.
-The profile is `~/.cache/latexto` on Linux, `~/Library/Caches/latexto` on
-macOS, `%LOCALAPPDATA%\latexto` on Windows, and `npx latexto help` prints the
-resolved path. Do not delete it between runs, and do not lower `--timeout`
-below the default of 1200 seconds for a first run.
+The first compile boots the TeX VM and downloads the parts of TeX Live the
+document needs into a browser profile, which can take a minute or more; later
+compiles read that cache and finish in seconds. A part that is not cached yet
+(another engine, a package not used before) is fetched when a document first
+needs it, so the network has to stay reachable. The profile is
+`~/.cache/latexto` on Linux, `~/Library/Caches/latexto` on macOS,
+`%LOCALAPPDATA%\latexto` on Windows, and `npx latexto help` prints the resolved
+path. Do not delete it between runs, and do not lower `--timeout` below the
+default of 1200 seconds for a first run.
 
-Progress messages ("Booting", "Compiling", package downloads) stream to stderr
-while this happens. They are progress, not errors.
-
-A ConTeXt document that names a typeface outside the prepared set (Latin
-Modern) prepares its fonts before its first compile, with `Preparing fonts
-(round n)` on stderr. That can add several minutes once; the prepared fonts
-stay in the profile, so a later compile of the same document skips it.
+Progress lines ("Starting TeX Live…", "pdflatex pass 1", "biber") stream to
+stderr while this happens. They are progress, not errors.
 
 ## When a compile fails
 

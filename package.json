@@ -1,6 +1,6 @@
 {
   "name": "latexto",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Compile LaTeX to PDF and render LaTeX to PNG from the command line, with no local TeX installation. Drives latex.to in headless Chromium.",
   "keywords": [
     "latex",
@@ -29,7 +29,7 @@
     ".": "./src/index.js"
   },
   "bin": {
-    "latexto": "./bin/latexto.js"
+    "latexto": "bin/latexto.js"
   },
   "files": [
     "bin",

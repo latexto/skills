@@ -49,8 +49,8 @@ export function parseCrop(value) {
   return { x, y, width, height };
 }
 
-async function compiledPage(session, { files, main, engine, bibliography, page, scale, crop }) {
-  const { pdf } = await session.compile({ files, main, engine, bibliography });
+async function compiledPage(session, { files, main, engine, bibliography, project, clean, page, scale, crop }) {
+  const { pdf } = await session.compile({ files, main, engine, bibliography, project, clean });
   const rendered = await session.pdfToPng({ pdf, page, scale, crop });
   return { ...rendered, route: 'tex' };
 }
@@ -73,9 +73,11 @@ export async function renderImage(session, options = {}) {
     crop = 'auto',
     engine,
     bibliography,
+    project,
+    clean,
   } = options;
 
-  if (files) return compiledPage(session, { files, main, engine, bibliography, page, scale, crop });
+  if (files) return compiledPage(session, { files, main, engine, bibliography, project, clean, page, scale, crop });
 
   const isDocument = isDocumentSource(source);
 
@@ -101,6 +103,8 @@ export async function renderImage(session, options = {}) {
     main: documentName,
     engine,
     bibliography,
+    project,
+    clean,
     page,
     scale,
     crop,

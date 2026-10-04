@@ -37,6 +37,7 @@ const ARGUMENT_REJECTIONS = [
   /^crop /,
   /^Unknown engine /,
   /^Unknown bibliography /,
+  /^project must /,
   /is not a usable file name\.$/,
   /is not valid base64\.$/,
   /must be a Uint8Array, an ArrayBuffer or \{ base64 \}\.$/,
@@ -171,7 +172,6 @@ async function readApi(page, url, waitMs) {
     apiVersion: window.latexto.apiVersion,
     engines: Array.isArray(window.latexto.engines) ? window.latexto.engines.slice() : [],
     bibliographies: Array.isArray(window.latexto.bibliographies) ? window.latexto.bibliographies.slice() : [],
-    isolated: Boolean(window.crossOriginIsolated) && typeof SharedArrayBuffer === 'function',
     bridge: typeof window.__latextoToBase64 === 'function',
   }));
 
@@ -186,9 +186,9 @@ async function readApi(page, url, waitMs) {
   return info;
 }
 
-function rejection(result, hint = '') {
+function rejection(result) {
   if (ARGUMENT_REJECTIONS.some((shape) => shape.test(result.message))) return new UsageError(result.message);
-  return new CompileError(result.message + hint, result.log);
+  return new CompileError(result.message, result.log);
 }
 
 export class LatextoSession {
@@ -214,18 +214,14 @@ export class LatextoSession {
     this.apiVersion = info.apiVersion;
     this.engines = info.engines;
     this.bibliographies = info.bibliographies;
-    this.crossOriginIsolated = info.isolated;
   }
 
-  get isolationHint() {
-    if (this.crossOriginIsolated) return '';
-    return `\n${this.url} is not cross-origin isolated, so SharedArrayBuffer is unavailable and no PDF can be produced. The server must send the COOP and COEP headers.`;
-  }
-
-  async compile({ files, main, engine, bibliography }) {
+  async compile({ files, main, engine, bibliography, project, clean }) {
     const request = { files, main };
     if (engine) request.engine = engine;
     if (bibliography) request.bibliography = bibliography;
+    if (project) request.project = project;
+    if (clean) request.clean = true;
 
     const result = await this.#evaluate(async (request) => {
       try {
@@ -240,7 +236,7 @@ export class LatextoSession {
       }
     }, request);
 
-    if (!result.ok) throw rejection(result, this.isolationHint);
+    if (!result.ok) throw rejection(result);
     return { pdf: Buffer.from(result.pdf, 'base64'), log: result.log };
   }
 

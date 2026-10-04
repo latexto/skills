@@ -2,7 +2,7 @@
 name: latex-to-image
 description: Renders LaTeX math, TikZ diagrams, LaTeX documents and LaTeX projects to PNG images with no TeX installation. Use when the user wants an equation, formula, matrix, chemical or mathematical expression, table, TikZ or PSTricks diagram, figure or plot, or one page of a .tex document or project turned into a picture, for a slide, a README, a chat message, an issue or a web page. A math snippet renders in milliseconds through KaTeX; TikZ, PSTricks, plots, documents and exact TeX output go through a real TeX Live compile and are cropped automatically. Pass a single file when it is self-contained, otherwise pass the directory holding the main file, and pick the page with --page. Not for turning a whole document into a PDF, use latex-to-pdf for that.
 license: MIT
-compatibility: Requires a shell, Node 18.3 or newer, a Chromium based browser (npx playwright install chromium), and network access to latex.to, cdn.latex.to and cxrtnc.leaningtech.com (the snippet route needs latex.to only). Not usable in a browser-less or egress-restricted sandbox.
+compatibility: Requires a shell, Node 18.3 or newer, a Chromium based browser (npx playwright install chromium), and network access to latex.to and cdn.latex.to (the snippet route needs latex.to only). Not usable in a browser-less or egress-restricted sandbox.
 ---
 
 # Render LaTeX to PNG
@@ -49,9 +49,9 @@ That means "pass the directory", not "the file is really missing".
 ## Where this runs
 
 It needs a shell on a machine or container that can run a Chromium based
-browser and reach `latex.to`, `cdn.latex.to` and `cxrtnc.leaningtech.com` (the
-snippet route needs `latex.to` alone). Local coding agents (Claude Code, Codex,
-Cursor and similar) and CI runners qualify.
+browser and reach `latex.to` and `cdn.latex.to` (the snippet route needs
+`latex.to` alone). Local coding agents (Claude Code, Codex, Cursor and similar)
+and CI runners qualify.
 
 Browser-less or egress-restricted sandboxes do not: Claude.ai code execution,
 Claude Code on the web and Cowork have no browser to drive and no route to those
@@ -67,8 +67,8 @@ because shared libraries are missing, `npx playwright install-deps`. Set
 `LATEXTO_BROWSER` to an executable path to use a browser the tool does not find
 on its own.
 
-The document and project routes cache their TeX Live disk image in a browser
-profile: `~/.cache/latexto` on Linux, `~/Library/Caches/latexto` on macOS,
+The document and project routes cache the parts of TeX Live they download in a
+browser profile: `~/.cache/latexto` on Linux, `~/Library/Caches/latexto` on macOS,
 `%LOCALAPPDATA%\latexto` on Windows (`npx latexto help` prints the resolved
 path). The snippet route needs none of it.
 
@@ -111,10 +111,10 @@ npx latexto image eq.tex --tex -o eq.png
 ```
 
 Use it when the image has to match the typeset document exactly, or when the
-snippet uses packages beyond KaTeX. It is slower: the first compile boots a TeX
-Live virtual machine and can take several minutes, later ones take seconds
-because the browser profile caches the disk image. A directory needs no `--tex`,
-it is a project and always compiles.
+snippet uses packages beyond KaTeX. It is slower: the first compile boots the
+TeX VM and downloads the parts of TeX Live the document needs, which can take a
+minute or more, and later ones take seconds because the browser profile caches
+them. A directory needs no `--tex`, it is a project and always compiles.
 
 ## Render a page of a document
 
@@ -153,8 +153,9 @@ slashes, and the compile runs with that directory as its working directory: a
 `project/src/thesis.tex` holding `\input{chapters/intro}` wants
 `./project/src`, not `./project --main src/thesis.tex`. Whatever staging refuses
 (symlinks leaving the project, files over 32 MB, a total past 128 MB) is
-reported on stderr as one `skipped N files: name (reason)` line, and dotfiles,
-`node_modules` and symlinked directories are dropped quietly.
+reported on stderr as one `skipped N files: name (reason)` line, and dotfiles
+(except a `.latexmkrc` in the directory root), `node_modules` and symlinked
+directories are dropped quietly.
 
 The main file is `--main`, else `main.tex`, else the only `.tex` file in the
 directory root, else the only `.tex` file anywhere in the tree. `--main` is a
@@ -171,7 +172,9 @@ and `auto, none, bibtex, biblatex-bibtex, biblatex-biber`; `auto` picks the
 PostScript route `latex` for a PSTricks document by itself, and the ids are
 read from the site at run time). `--page`, `--scale`
 and `--crop` work as they do on the document route. Without `-o` the PNG is
-`<main>.png` in the current working directory.
+`<main>.png` in the current working directory. `--clean` compiles from scratch,
+for a path that now holds a different document than the one compiled there
+before.
 
 Asking for a page the PDF does not have is a usage error, exit code 2, and the
 message says how many pages there are:

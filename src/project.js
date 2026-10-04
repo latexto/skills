@@ -1,9 +1,13 @@
+import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 import { UsageError } from './errors.js';
 
 const SKIPPED_DIRS = new Set(['node_modules']);
+// The one dotfile that is staged: the engine reads it in the project root to
+// pick the TeX engine, as latexmk would.
+const LATEXMKRC = '.latexmkrc';
 const MAIN_DEFAULT = 'main.tex';
 
 // Per file, the same ceiling the site puts on a staged image; in total, what one
@@ -19,6 +23,17 @@ export function decodeUtf8Strict(bytes) {
   } catch {
     return null;
   }
+}
+
+/**
+ * The id the page keeps a project's build files under between runs: one per
+ * real location (symlinks resolved, the path staging itself reads) and main
+ * file, so two projects never read each other's .aux, and a hash, so no local
+ * path reaches the page. NUL cannot occur in a path, which keeps the two
+ * fields apart.
+ */
+export function projectId(realPath, main) {
+  return createHash('sha256').update(`${realPath}\0${main}`).digest('hex');
 }
 
 export function readTextFile(file) {
@@ -56,7 +71,7 @@ function insideRoot(realRoot, file) {
 
 function walk(root, realRoot, relative, entries, skipped) {
   for (const entry of readdirSync(path.join(root, relative), { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue;
+    if (entry.name.startsWith('.') && !(relative === '' && entry.name === LATEXMKRC)) continue;
     const name = relative === '' ? entry.name : `${relative}/${entry.name}`;
     const full = path.join(root, name);
 
@@ -90,10 +105,11 @@ function walk(root, realRoot, relative, entries, skipped) {
  */
 export function listProject(target) {
   const root = path.resolve(target);
+  const realRoot = realpathSync(root);
   const entries = [];
   const skipped = [];
-  walk(root, realpathSync(root), '', entries, skipped);
-  return { root, entries, names: entries.map((entry) => entry.name), skipped };
+  walk(root, realRoot, '', entries, skipped);
+  return { root, realRoot, entries, names: entries.map((entry) => entry.name), skipped };
 }
 
 /**
@@ -129,11 +145,12 @@ export function skippedReport(skipped) {
 }
 
 /**
- * Turns a .tex file or a project directory into the { files, main, skipped,
- * output } the page API compiles. `output` is the file this run will write: a
- * path, or a function of the chosen main name for a caller whose output name
- * depends on it, and it is echoed back resolved. Nothing is read before the
- * main file is known, so the output never stages itself into its own compile.
+ * Turns a .tex file or a project directory into the { files, main, project,
+ * skipped, output } the page API compiles. `output` is the file this run will
+ * write: a path, or a function of the chosen main name for a caller whose
+ * output name depends on it, and it is echoed back resolved. Nothing is read
+ * before the main file is known, so the output never stages itself into its
+ * own compile.
  */
 export function stageProject(target, { main, output } = {}) {
   let info;
@@ -148,7 +165,8 @@ export function stageProject(target, { main, output } = {}) {
     const name = mainForFile(target, main);
     const files = Object.create(null);
     files[name] = stageFile(target);
-    return { files, main: name, skipped: [], output: resolveOutput(name) };
+    const project = projectId(realpathSync(target), name);
+    return { files, main: name, project, skipped: [], output: resolveOutput(name) };
   }
 
   const listing = listProject(target);
@@ -162,7 +180,13 @@ export function stageProject(target, { main, output } = {}) {
     const dropped = staged.skipped.find((entry) => entry.name === chosen);
     throw new UsageError(`The main file ${chosen} was not staged: ${dropped ? dropped.reason : 'it is unreadable'}.`);
   }
-  return { files: staged.files, main: chosen, skipped: staged.skipped, output: resolved };
+  return {
+    files: staged.files,
+    main: chosen,
+    project: projectId(listing.realRoot, chosen),
+    skipped: staged.skipped,
+    output: resolved,
+  };
 }
 
 export function mainForFile(target, requested) {

@@ -56,7 +56,7 @@ it could not read, exit code 1.
   sandbox wherever the environment can provide one, and says on stderr when it
   has to run without it (containers often cannot sandbox). `--sandbox` requires
   the sandbox and fails with exit code 3 when it cannot start.
-- Network access to `latex.to`, `cdn.latex.to` and `cxrtnc.leaningtech.com`.
+- Network access to `latex.to` and `cdn.latex.to`.
 
 ## Command line
 
@@ -85,7 +85,10 @@ it was given a directory. A symbolic link at the output path is refused, never
 followed, so an untrusted project cannot point the write at a file of yours.
 
 Only the PDF comes back. Nothing is written into the project itself: the `.aux`,
-`.bbl` and `.log` files live and die inside the browser VM.
+`.bbl` and `.log` files stay in the browser profile, kept per input path and
+main file, which is why compiling the same project again takes fewer passes.
+`--clean` compiles from scratch. Use it when a path now holds a different
+document, whose first compile would otherwise start from the old one's files.
 
 ## Directory projects
 
@@ -115,8 +118,9 @@ the total past 128 MB, and the output file when it sits inside the project.
 Sizes are read from the directory entry, so an over-budget file is never read
 and never truncated; move the large data out of the tree or compile a trimmed
 copy. Dropped quietly: dotfiles and dot-directories, `node_modules`, and
-symlinked directories, which are never followed. When LaTeX cannot find a file,
-read the skipped line first.
+symlinked directories, which are never followed. The one dotfile that is staged
+is a `.latexmkrc` in the directory root. When LaTeX cannot find a file, read the
+skipped line first.
 
 ## Overleaf and arXiv archives
 
@@ -136,13 +140,15 @@ tends to hold several `.tex` files in the root and no `main.tex`.
 `--engine` takes an id:
 `auto, pdflatex, xelatex, lualatex, latex, latex-dvipdfmx, pdftex, xetex, luatex, context, platex, uplatex, context-mkiv`.
 `--bib` takes `auto, none, bibtex, biblatex-bibtex, biblatex-biber`. `auto`
-detects from the source. `latex` is LaTeX through dvips and Ghostscript, the
-PostScript route that renders PSTricks, psfrag and EPS figures, and what `auto`
-picks for a document loading `pstricks`; `latex-dvipdfmx` is LaTeX producing
-DVI, converted with dvipdfmx, and is never auto-picked; `context` is the
-current ConTeXt (LMTX) and `context-mkiv` the older MkIV branch, which has to
-be named. No value needs quoting. The ids are read from the site at run time,
-so a wrong value exits 2 and prints the list the site accepts today.
+takes the first sign it finds: a `% !TeX program` line in the main file, then
+the `$pdf_mode` of a `.latexmkrc` or `latexmkrc` in the directory root, then
+the packages the source loads. `latex` is LaTeX through dvips and Ghostscript,
+the PostScript route that renders PSTricks, psfrag and EPS figures, and what
+`auto` picks for a document loading `pstricks`; `latex-dvipdfmx` is LaTeX
+producing DVI, converted with dvipdfmx, and is never auto-picked; `context` is
+the current ConTeXt (LMTX) and `context-mkiv` the older MkIV branch, which has
+to be named. No value needs quoting. The ids are read from the site at run
+time, so a wrong value exits 2 and prints the list the site accepts today.
 
 ## Images
 
@@ -179,13 +185,14 @@ that cannot be written).
 
 ## The first compile is slow, the rest are fast
 
-The first compile downloads a TeX Live disk image into a persistent browser
-profile and can take several minutes. The cache lives in that profile's
-IndexedDB, so every later compile reads it and finishes in seconds: keep the
-profile directory and you keep the cache. It is `~/.cache/latexto` on Linux,
-`~/Library/Caches/latexto` on macOS and `%LOCALAPPDATA%\latexto` on Windows, and
-`latexto help` prints the resolved path. The KaTeX route for math snippets skips
-all of this and is fast from the start.
+The first compile boots the TeX VM and downloads the parts of TeX Live the
+document needs into a persistent browser profile, which can take a minute or
+more. Every later compile reads them from that profile and finishes in seconds:
+keep the profile directory and you keep the cache. It is `~/.cache/latexto` on
+Linux, `~/Library/Caches/latexto` on macOS and `%LOCALAPPDATA%\latexto` on
+Windows, and `latexto help` prints the resolved path. There is no full offline
+copy: a part that is not cached yet is fetched when a document first needs it.
+The KaTeX route for math snippets skips all of this and is fast from the start.
 
 One browser at a time per profile. A run that finds the profile held by another
 browser is refused, so give the second one a profile of its own with
@@ -202,10 +209,14 @@ Environment variables:
 import { openSession, stageProject, renderImage } from 'latexto';
 
 const session = await openSession({ onStatus: (m) => console.error(m) });
-const { files, main, skipped } = stageProject('./thesis');
-const { pdf, log } = await session.compile({ files, main });
+const { files, main, project, skipped } = stageProject('./thesis');
+const { pdf, log } = await session.compile({ files, main, project });
 await session.close();
 ```
+
+`project` is the id the page keeps this project's build files under, a hash of
+the real path and the main file. Leave it out and nothing is kept once the
+session closes; `clean: true` compiles from scratch.
 
 `session.closed` says whether the browser is still there, and
 `openSession({ onClose })` calls back once when it goes away.
@@ -214,14 +225,13 @@ await session.close();
 
 The CLI launches headless Chromium through `playwright-core`, its one third
 party dependency, opens <https://latex.to>, and calls the page API the site
-exposes. The site boots a Linux virtual machine in the browser, streams the TeX
-Live packages it needs, and compiles there. Your `.tex` sources reach that
-virtual machine and nowhere else: the compile is client side, and the network
-carries only what the page itself needs.
+exposes. The site boots a Linux virtual machine in the browser, streams the
+parts of TeX Live the document needs, and compiles there. Your `.tex` sources
+reach that virtual machine and nowhere else: the compile is client side, and
+the network carries only what the page itself needs.
 
 - `latex.to`, the page being driven.
 - `cdn.latex.to`, the TeX Live image blocks that page streams.
-- `cxrtnc.leaningtech.com`, the CheerpX runtime it loads (a license requirement).
 - the npm registry, when the tool itself is run through `npx`.
 
 The same page API powers the PNG side, either through pdf.js for a compiled page

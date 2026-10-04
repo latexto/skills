@@ -2,6 +2,7 @@ export { openSession, LatextoSession, DEFAULT_URL, DEFAULT_TIMEOUT_SECONDS, SUPP
 export { browserCandidates, defaultProfileDir } from './browser.js';
 export {
   stageProject,
+  projectId,
   listProject,
   stageFiles,
   skippedReport,

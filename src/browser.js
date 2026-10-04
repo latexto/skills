@@ -31,8 +31,8 @@ const SANDBOX_HINT =
   'Without that flag the browser starts unsandboxed when the environment cannot sandbox it.';
 
 // Playwright 1.58+ installs Chrome for Testing layouts (chrome-linux64, chrome-mac-<arch>,
-// chrome-win64); the older chrome-linux / chrome-mac / chrome-win layouts remain on
-// linux-arm64 and in caches written before then. Full builds first, headless shells after.
+// chrome-win64), and later revisions chrome-linux-arm64; the older chrome-linux / chrome-mac /
+// chrome-win layouts remain in caches written before then. Full builds first, headless shells after.
 const CHROMIUM_EXECUTABLES = {
   darwin: [
     'chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
@@ -50,8 +50,10 @@ const CHROMIUM_EXECUTABLES = {
   ],
   linux: [
     'chrome-linux64/chrome',
+    'chrome-linux-arm64/chrome',
     'chrome-linux/chrome',
     'chrome-headless-shell-linux64/chrome-headless-shell',
+    'chrome-headless-shell-linux-arm64/chrome-headless-shell',
     'chrome-linux/headless_shell',
   ],
 };
